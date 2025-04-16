@@ -1,14 +1,12 @@
 package lib;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Employee {
 
     private String employeeId;
     private PersonalInfo personalInfo;
-    private JoinDate joinDate;
+    private LocalDate joinDate;
     private Nationality nationality;
     private Gender gender;
 
@@ -16,14 +14,14 @@ public class Employee {
     private int otherMonthlyIncome;
     private int annualDeductible;
 
-    private Spouse spouse;
-    private List<Child> children = new ArrayList<>();
+    private boolean hasSpouse;
+    private int numberOfChildren;
 
     public Employee(String employeeId, String firstName, String lastName, String idNumber, String address,
                     int yearJoined, int monthJoined, int dayJoined, boolean isForeigner, boolean gender) {
         this.employeeId = employeeId;
         this.personalInfo = new PersonalInfo(firstName, lastName, idNumber, address);
-        this.joinDate = new JoinDate(yearJoined, monthJoined, dayJoined);
+        this.joinDate = LocalDate.of(yearJoined, monthJoined, dayJoined);
         this.nationality = isForeigner ? Nationality.FOREIGNER : Nationality.LOCAL;
         this.gender = gender ? Gender.MALE : Gender.FEMALE;
     }
@@ -41,24 +39,25 @@ public class Employee {
     }
 
     public void setSpouse(String name, String idNumber) {
-        this.spouse = new Spouse(name, idNumber);
+        this.hasSpouse = true;
     }
 
     public void addChild(String name, String idNumber) {
-        this.children.add(new Child(name, idNumber));
+        this.numberOfChildren++;
     }
 
     public int getAnnualIncomeTax() {
         int monthWorked = calculateMonthWorked();
         IncomeDetail income = new IncomeDetail(monthlySalary, otherMonthlyIncome, monthWorked, annualDeductible);
-        FamilyStatus family = new FamilyStatus(spouse != null, children.size());
-        return TaxFunction.calculateTax(income, family);
+        FamilyStatus family = new FamilyStatus(hasSpouse, numberOfChildren);
+
+        TaxFunction calculator = new TaxFunction(income, family);
+        return calculator.calculateAnnualTax();
     }
 
     private int calculateMonthWorked() {
         LocalDate today = LocalDate.now();
-        return (today.getYear() == joinDate.getYear()) ?
-                today.getMonthValue() - joinDate.getMonth() : 12;
+        return (today.getYear() == joinDate.getYear()) ? today.getMonthValue() - joinDate.getMonthValue() : 12;
     }
 
     public enum Gender { MALE, FEMALE }
@@ -80,42 +79,12 @@ public class Employee {
         }
     }
 
-    public static class Spouse {
-        private String name;
-        private String idNumber;
-        public Spouse(String name, String idNumber) {
-            this.name = name;
-            this.idNumber = idNumber;
-        }
-    }
-
-    public static class Child {
-        private String name;
-        private String idNumber;
-        public Child(String name, String idNumber) {
-            this.name = name;
-            this.idNumber = idNumber;
-        }
-    }
-
-    public static class JoinDate {
-        private int year;
-        private int month;
-        private int day;
-        public JoinDate(int year, int month, int day) {
-            this.year = year;
-            this.month = month;
-            this.day = day;
-        }
-        public int getYear() { return year; }
-        public int getMonth() { return month; }
-    }
-
     public static class PersonalInfo {
         private String firstName;
         private String lastName;
         private String idNumber;
         private String address;
+
         public PersonalInfo(String firstName, String lastName, String idNumber, String address) {
             this.firstName = firstName;
             this.lastName = lastName;
